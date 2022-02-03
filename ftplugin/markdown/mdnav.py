@@ -50,12 +50,12 @@ def plugin_entry_point():
     action = open_link(
         target,
         current_file=vim.eval("expand('%:p')"),
-        open_in_vim_extensions=extensions,
-    )
-    action()
+        open_in_os_extensions=extensions,
+    ) # 返回是类的实例, 比如JumpToAnchor
+    action() # 跳转动作
 
 
-def open_link(target, current_file, open_in_vim_extensions=set()):
+def open_link(target, current_file, open_in_os_extensions=set()):
     """
     :returns: a callable that encapsulates the action to perform
     """
@@ -66,25 +66,28 @@ def open_link(target, current_file, open_in_vim_extensions=set()):
         _logger.info('no target')
         return NoOp(target)
 
+    if target.startswith('#^'): # 这是heading inside的情况
+        return JumpToAnchor(target[1:])
+
     if target.startswith('#'): # 这是heading inside的情况
-        return JumpToAnchor(target)
+        return JumpToAnchor("# " + target[1:])
+    
+    # if has_scheme(target):
+    #     _logger.info('has scheme -> open in browser')
+    #     return BrowserOpen(target)
 
-    if has_scheme(target):
-        _logger.info('has scheme -> open in browser')
-        return BrowserOpen(target)
-
-    if not has_extension(target, open_in_vim_extensions): # TODO 我不是不想加.md后缀么
+    if has_os_extension(target, open_in_os_extensions): # TODO 我不是不想加.md后缀么
         _logger.info('has no extension for opening in vim')
         return OSOpen(anchor_path(target, current_file))
 
 # 以下两个判断说是pelican格式, 好像不用管
-    if target.startswith('|filename|'):
-        target = target[len('|filename|'):]
+    # if target.startswith('|filename|'):
+    #     target = target[len('|filename|'):]
 
-    if target.startswith('{filename}'):
-        target = target[len('{filename}'):]
+    # if target.startswith('{filename}'):
+    #     target = target[len('{filename}'):]
 
-    return VimOpen(anchor_path(target, current_file))
+    return VimOpen(anchor_path(target, current_file)) # 跨文件, 且用vim打开的文件走这里
 
 
 def anchor_path(target, current_file):
@@ -95,9 +98,10 @@ def anchor_path(target, current_file):
     return os.path.join(os.path.dirname(current_file), target)
 
 
-def has_extension(path, extensions):
+def has_os_extension(path, extensions):
+    '''如果extensions不为空, 且后缀在extensions中, 返回True'''
     if not extensions:
-        return True
+        return False
 
     path = parse_path(path)
     _, ext = os.path.splitext(path.path)
@@ -144,7 +148,7 @@ class OSOpen(Action):
 
 
 class VimOpen(Action):
-    '''这个类负责打开文件, 如果有line number, 再跳到指定line number'''
+    '''这个类负责打开文件, 如果有line number, 再跳到指定line number, 文件有可能没有后缀'''
     def __call__(self):
         import vim
 
@@ -168,9 +172,8 @@ class VimOpen(Action):
 
 
 class JumpToAnchor(Action):
-    '''这个类负责跳到anchor, target存的是anchor'''
-    heading_pattern = re.compile(r'^#+(?P<title>.*)$')
-    attr_list_pattern = re.compile(r'{:\s+#(?P<id>\S+)\s')
+    '''这个类负责跳到anchor, target存的是anchor, 这里的target包括^'''
+    # attr_list_pattern = re.compile(r'\^(?P<id>\w+)')
 
     def __call__(self):
         import vim
@@ -184,32 +187,48 @@ class JumpToAnchor(Action):
     @classmethod
     def find_anchor(cls, target, buffer):
         ''''''
-        needle = cls.norm_target(target)
+        # 思路就是遍历每一行, 先检查这一行是不是header, 如果是, 把title格式化, 看是不是相等, 对anchor也同样如此
+        for (idx, line) in enumerate(buffer):
+            if(line.find(target) >= 0):
+                return idx
+
+
+# 这个没用, 但如果需要处理这种错误情况: # ls, 那就有用了
+class JumpToHeading(Action):
+    '''这个类负责跳到anchor, target包括# '''
+    heading_pattern = re.compile(r'^#+(?P<title>.*)$')
+
+    def __call__(self):
+        import vim
+        line = self.find_anchor(self.target, vim.current.buffer)
+
+        if line is None:
+            return
+
+        vim.current.window.cursor = (line + 1, 0) #highlight 设置line
+
+    @classmethod
+    def find_anchor(cls, target, buffer):
+        ''''''
+        # needle = cls.norm_target(target)
 
         # 思路就是遍历每一行, 先检查这一行是不是header, 如果是, 把title格式化, 看是不是相等, 对anchor也同样如此
         for (idx, line) in enumerate(buffer):
-            m = cls.heading_pattern.match(line)
-            if (
-                m is not None and
-                cls.title_to_anchor(m.group('title')) == needle
-            ):
+            if(line.find(target)>=0):
                 return idx
 
-            m = cls.attr_list_pattern.search(line)
-            if m is not None and needle == m.group('id'):
-                return idx
 
-    @staticmethod
-    def title_to_anchor(title): # highlight, 这个函数起到了转换title的作用
-        return '-'.join(fragment.lower() for fragment in title.split())
+    # @staticmethod
+    # def title_to_anchor(title): # highlight, 这个函数起到了转换title的作用
+    #     return '-'.join(fragment.lower() for fragment in title.split())
 
-    @staticmethod
-    def norm_target(target):
-        '''就是去掉#剩余的内容再小写'''
-        if target.startswith('#'):
-            target = target[1:]
+    # @staticmethod
+    # def norm_target(target):
+    #     '''就是去掉#剩余的内容再小写'''
+    #     if target.startswith('#'):
+    #         target = target[1:]
 
-        return target.lower() # highlight 这里变小写了
+    #     return target.lower() # highlight 这里变小写了
 
 
 def call(args):
@@ -225,9 +244,23 @@ def call(args):
         args = ['shellescape(' + json.dumps(arg) + ')' for arg in args]
         vim.command('execute "! " . ' + ' . " " . '.join(args))
 
+def call(args):
+    """If available use vims shell mechanism to work around display issues
+    """
+    try:
+        import vim
 
-def parse_path(path):
+    except ImportError:
+        subprocess.call(args)
+
+    else:
+        args = ['shellescape(' + json.dumps(arg) + ')' for arg in args]
+        vim.command('execute "! " . ' + ' . " " . '.join(args))
+
+line_regex = re.compile('^.*:\d+$')
+def parse_path(target):
     """Parse a path with optional line number of anchor into its parts.
+    有可能没有后缀
 
     For example::
 
@@ -236,20 +269,24 @@ def parse_path(path):
     而且ParsedPath没做什么处理, 只是存起来
 
     """
-    path, ext = os.path.splitext(path) # 这里得到的ext可能包含#heading, #custom-d, :line
-    if '#' in ext:
-        ext, anchor = ext.rsplit('#', 1) 
-        return ParsedPath(path + ext, anchor=anchor)
-
-    if ':' in ext:
-        ext, line = ext.rsplit(':', 1) # 现在line还是字符串
-        return ParsedPath(path + ext, line=line)
-
-    return ParsedPath(path + ext)
+    ret = ParsedPath()
+    if(line_regex.match(target)):
+        path, line = target.rsplit(':', 1) # 现在line还是字符串
+        ret.line = line
+        ret.path = path
+    elif('#' in target):
+        path, anchor = target.rsplit('#', 1) # 现在line还是字符串
+        if not anchor.startswith("^"):
+            anchor = "# "+anchor
+        ret.path = path
+    if ret.path and (not '.' in ret.path):
+        ret.path = ret.path + ".md"
+    return ret
 
 
 class ParsedPath(object):
-    def __init__(self, path, line=None, anchor=None):
+    '''anchor既可以表示'''
+    def __init__(self, path=None, line=None, anchor=None):
         self.path = path
         self.line = line
         self.anchor = anchor
@@ -259,55 +296,40 @@ class ParsedPath(object):
 
 
 def parse_link(cursor, lines):
-    '''返回[]()中()的内容'''
-    row, column = cursor
+    '''返回[[]]中的内容'''
+    row, column = cursor # row从1开始, column从0开始
     line = lines[row] # 这才获得了当前行
-
-    _logger.info('handle line %s (%s, %s)', line, row, column)
-    m = reference_definition_pattern.match(line) # 这好像没什么关系
-    if m is not None:
-        return m.group('link').strip()
-
-    link_text, rel_column = select_from_start_of_link(line, column) # link_text 似乎是个数, 存的是[]()这样的起始行 
-
-    if not link_text:
-        _logger.info('could not find link text')
-        return None
-
-    m = link_pattern.match(link_text) # 我们关心的应该是direct
-
-    if not m:
-        _logger.info('does not match link pattern')
-        return None
-
-    if m.end('link') <= rel_column:
-        _logger.info('cursor outside link')
-        return None
-
-    _logger.info('found match: %s', m.groups())
-    assert (m.group('direct') is None) != (m.group('indirect') is None)
-
-    if m.group('direct') is not None:
-        _logger.info('found direct link: %s', m.group('direct'))
-        return m.group('direct')
-
-    _logger.info('follow indirect link %s', m.group('indirect'))
-    indirect_ref = m.group('indirect')
-    if not indirect_ref:
-        indirect_ref = m.group('text')
-
-    indirect_link_pattern = re.compile(
-        r'^\[' + re.escape(indirect_ref) + r'\]:(.*)$'
-    )
-
-    for line in lines:
-        m = indirect_link_pattern.match(line)
-
-        if m:
-            return m.group(1).strip()
-
-    _logger.info('could not match for indirect link')
+    start_pos = -1
+    end_pos = -1
+    if(line[column]=='['):
+        if(column+1 >= 0 and line[column+1]=='['):
+            start_pos = column+2
+        elif(column-1 >=0 and line[column-1]=='['):
+            start_pos = column+1
+        end_pos = line.find(']]', start_pos)
+        if start_pos >= 0 and end_pos >= 0:
+            return line[start_pos:end_pos]
+    elif(line[column]==']'):
+        if(column-1 >=0 and line[column-1]==']'):
+            end_pos = column - 1
+        elif(column+1 >=0 and line[column+1]==']'):
+            end_pos = column
+        start_pos = line.rfind('[[', 0, end_pos)
+        if start_pos >= 0 and end_pos >= 0:
+            return line[(start_pos+2):end_pos]
+    else:
+        start_pos = line.rfind('[[')
+        end_pos = line.find(']]')
+        if start_pos >= 0 and end_pos >= 0:
+            return line[(start_pos+2):end_pos]
     return None
+        
+
+    # _logger.info('handle line %s (%s, %s)', line, row, column)
+    # m = reference_definition_pattern.match(line) # 这好像没什么关系
+    # if m is not None:
+    #     return m.group('link').strip()
+
 
 
 reference_definition_pattern = re.compile(r'''
@@ -345,6 +367,7 @@ link_pattern = re.compile(r'''
 def select_from_start_of_link(line, pos):
     """Return the start of the link string and the new cursor
     """
+    
     if pos < len(line) and line[pos] == '[':
         start = pos
 
