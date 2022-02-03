@@ -12,8 +12,7 @@ import webbrowser
 import vim
 current_file = vim.eval("expand('%:p')")
 vault_prefix = "/Users/quebec/notes/vx_attachments/"
-line_regex = re.compile('^.*:\d+$')
-open_in_os_extensions = ['png', 'pdf', 'jpg', 'jpeg', 'mp3', 'mp4']
+open_in_os_extensions = {'png', 'pdf', 'jpg', 'jpeg', 'mp3', 'mp4'}
 # }}}
 
 
@@ -53,9 +52,9 @@ def plugin_entry_point():
     action = open_link(
         target,
         current_file=vim.eval("expand('%:p')"),
-        open_in_os_extensions=extensions,
     ) # 返回是类的实例, 比如JumpToAnchor
-    action() # 跳转动作
+    if(action):
+        action() # 跳转动作
 
 
 # {{{ 入口, target是target
@@ -77,12 +76,11 @@ def open_link(target, current_file):
         return OSOpen(parsed_path.path)
     elif(parsed_path.internal):
         return JumpToAnchor(parsed_path)
-
-    return VimOpen(parsed_path) # 跨文件, 且用vim打开的文件走这里
+    else:
+        return VimOpen(parsed_path) # 跨文件, 且用vim打开的文件走这里
 
 
 def anchor_path(target):
-    import vim
     if os.path.isabs(target):
         return target
 
@@ -141,7 +139,7 @@ class VimOpen(Action):
             vim.current.window.cursor = (self.target.line, 0) # highlight 控制cursor到指定行
 
         if self.target.anchor is not None:
-            JumpToAnchor(self.target.anchor)() #? JumpToAnchor没有__init__方法, 那么如何接受参数?
+            JumpToAnchor(self.target)() #? JumpToAnchor没有__init__方法, 那么如何接受参数?
 
 
 class JumpToAnchor(Action):
@@ -206,10 +204,11 @@ def parse_path(target):
         ret.anchor = target[1:]
     elif target.startswith('#'): # 这是heading inside的情况
         ret.internal = True
-        ret.anchor = JumpToAnchor("# " + target[1:])
+        ret.anchor = "# " + target[1:]
     else: # 这种情况一定包含文件
         # {{{2 其它文件的3种链接形式
         ret.internal = False # 这句话是多余的, False是默认值
+        line_regex = re.compile('^.*:\d+$')
         if('#' in target):
             ret.path, ret.anchor = target.rsplit('#', 1) # 现在line还是字符串
             if not ret.anchor.startswith("^"):
