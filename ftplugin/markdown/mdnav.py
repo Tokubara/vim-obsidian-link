@@ -216,8 +216,11 @@ def parse_path(target):
             anchor = "# "+anchor
         ret.anchor = anchor
         ret.path = path
+    else:
+        ret.path = target
     if ret.path and (not '.' in ret.path):
         ret.path = ret.path + ".md"
+    assert os.path.exists(ret.path), f"{ret.path} not exists"
     return ret
 
 
