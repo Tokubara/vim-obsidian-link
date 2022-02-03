@@ -93,9 +93,10 @@ class ParsedPath(object):
 
     def __repr__(self):
         return 'ParsedPath({!r}, line={}, anchor={!r}, os_open={}, internal={})'.format(self.path, self.line, self.anchor, self.os_open, self.internal)
-parse_path = ParsePath("/Users/quebec/notes/tmp.md").parse_path
-print(parse_path('python#如果没实现`__init__`方法, 类有参数'))
-print(parse_path('#^t3thyl'))
-print(parse_path('/Users/quebec/box/obsidian/vim/mdnav/ftplugin/markdown/mdnav.py'))
-print(parse_path('Table 5.3.png'))
+if __name__ == '__main__':
+    parse_path = ParsePath("/Users/quebec/notes/tmp.md").parse_path
+    print(parse_path('python#如果没实现`__init__`方法, 类有参数'))
+    print(parse_path('#^t3thyl'))
+    print(parse_path('/Users/quebec/box/obsidian/vim/mdnav/ftplugin/markdown/mdnav.py'))
+    print(parse_path('Table 5.3.png'))
 

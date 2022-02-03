@@ -1,11 +1,10 @@
 from __future__ import print_function
-
 import collections
 import json
 import os.path
 import re
 import sys
-import subprocess
+sys.path.append("/Users/quebec/box/obsidian/vim/mdnav/ftplugin/markdown/")
 from parse_path import ParsePath, ParsedPath
 
 # {{{1 全局变量
@@ -145,6 +144,7 @@ def call(args):
         import vim
 
     except ImportError:
+        import subprocess
         subprocess.call(args)
 
     else:
