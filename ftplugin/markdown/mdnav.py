@@ -8,10 +8,14 @@ import sys
 import subprocess
 import webbrowser
 
-try:
-    from urllib.parse import urlparse
-except ImportError:
-    from urlparse import urlparse
+# {{{1 全局变量
+import vim
+current_file = vim.eval("expand('%:p')")
+vault_prefix = "/Users/quebec/notes/vx_attachments/"
+line_regex = re.compile('^.*:\d+$')
+open_in_os_extensions = ['png', 'pdf', 'jpg', 'jpeg', 'mp3', 'mp4']
+# }}}
+
 
 
 class FakeLogger(object):
@@ -54,51 +58,55 @@ def plugin_entry_point():
     action() # 跳转动作
 
 
-def open_link(target, current_file, open_in_os_extensions=set()):
+# {{{ 入口, target是target
+def open_link(target, current_file):
     """
     :returns: a callable that encapsulates the action to perform
     """
+
     if target is not None:
         target = target.strip()
 
     if not target:
         _logger.info('no target')
-        return NoOp(target)
+        # return NoOp(target)
 
-    if target.startswith('#^'): # 这是heading inside的情况
-        return JumpToAnchor(target[1:])
+        return None
+    parsed_path = parse_path(target)
+    if(parsed_path.os_open):
+        return OSOpen(parsed_path.path)
+    elif(parsed_path.internal):
+        return JumpToAnchor(parsed_path)
 
-    if target.startswith('#'): # 这是heading inside的情况
-        return JumpToAnchor("# " + target[1:])
-    
-    if has_os_extension(target, open_in_os_extensions): # TODO 我不是不想加.md后缀么
-        _logger.info('has no extension for opening in vim')
-        return OSOpen(anchor_path(target, current_file))
-
-    return VimOpen(anchor_path(target, current_file)) # 跨文件, 且用vim打开的文件走这里
+    return VimOpen(parsed_path) # 跨文件, 且用vim打开的文件走这里
 
 
-def anchor_path(target, current_file):
+def anchor_path(target):
+    import vim
     if os.path.isabs(target):
         return target
 
-    _logger.info('anchor path relative to %s', current_file)
-    return os.path.join(os.path.dirname(current_file), target)
+    ret = os.path.join(os.path.dirname(current_file), target)
+    if(os.path.exists(ret)):
+        return ret
+    ret = os.path.join(vault_prefix, target)
+    # if(os.path.exists(ret)):
+    #     return ret
+    return ret
 
 
-def has_os_extension(path, extensions):
+def has_os_extension(path):
     '''如果extensions不为空, 且后缀在extensions中, 返回True'''
-    if not extensions:
+    if not open_in_os_extensions:
         return False
 
-    path = parse_path(path)
-    _, ext = os.path.splitext(path.path)
-    return ext in extensions
+    _, ext = os.path.splitext(path)
+    return ext in open_in_os_extensions
 
 
 
 class Action(object):
-    '''仅仅是保存了target'''
+    '''仅仅是保存了target, 类型: ParsedPath'''
     def __init__(self, target):
         self.target = target
 
@@ -122,28 +130,18 @@ class OSOpen(Action):
             os.startfile(self.target)
 
 
+# {{{1 VimOpen: input: [[]]的内容, 跨文件, vim处理的情况
 class VimOpen(Action):
     '''这个类负责打开文件, 如果有line number, 再跳到指定line number, 文件有可能没有后缀'''
     def __call__(self):
         import vim
 
-        path = parse_path(self.target)
+        vim.command('e {}'.format(self.target.path.replace(' ', '\\ '))) # highlight 这一步就在vim中打开了文件
+        if self.target.line:
+            vim.current.window.cursor = (self.target.line, 0) # highlight 控制cursor到指定行
 
-        # TODO: make space handling more robust?
-        vim.command('e {}'.format(path.path.replace(' ', '\\ '))) # highlight 这一步就在vim中打开了文件
-        if path.line is not None:
-            try:
-                line = int(path.line)
-
-            except:
-                print('invalid line number')
-                return
-
-            else:
-                vim.current.window.cursor = (line, 0) # highlight 控制cursor到指定行
-
-        if path.anchor is not None:
-            JumpToAnchor(path.anchor)() #? JumpToAnchor没有__init__方法, 那么如何接受参数?
+        if self.target.anchor is not None:
+            JumpToAnchor(self.target.anchor)() #? JumpToAnchor没有__init__方法, 那么如何接受参数?
 
 
 class JumpToAnchor(Action):
@@ -152,7 +150,7 @@ class JumpToAnchor(Action):
 
     def __call__(self):
         import vim
-        line = self.find_anchor(self.target, vim.current.buffer)
+        line = self.find_anchor(self.target.anchor, vim.current.buffer)
 
         if line is None:
             return
@@ -180,20 +178,14 @@ def call(args):
         args = ['shellescape(' + json.dumps(arg) + ')' for arg in args]
         vim.command('execute "! " . ' + ' . " " . '.join(args))
 
-def call(args):
-    """If available use vims shell mechanism to work around display issues
-    """
-    try:
-        import vim
+# {{{ normalize_path: 将target中出现的path转换为真正存在的path
+def normalize_path(path):
+    if path and (not '.' in path):
+        path = path + ".md"
+    path = anchor_path(path)
+    return path
 
-    except ImportError:
-        subprocess.call(args)
-
-    else:
-        args = ['shellescape(' + json.dumps(arg) + ')' for arg in args]
-        vim.command('execute "! " . ' + ' . " " . '.join(args))
-
-line_regex = re.compile('^.*:\d+$')
+# {{{1 parse_path 解析[[]]出现的target, output: ParsedPath, path会处理相对路径
 def parse_path(target):
     """Parse a path with optional line number of anchor into its parts.
     有可能没有后缀
@@ -205,23 +197,39 @@ def parse_path(target):
     而且ParsedPath没做什么处理, 只是存起来
 
     """
+    if('|' in target):
+        target = target.rsplit('|')[0]
+    # {{{2 解析信息存入到ret(ParsedPath)中
     ret = ParsedPath()
-    if(line_regex.match(target)):
-        path, line = target.rsplit(':', 1) # 现在line还是字符串
-        ret.line = line
-        ret.path = path
-    elif('#' in target):
-        path, anchor = target.rsplit('#', 1) # 现在line还是字符串
-        if not anchor.startswith("^"):
-            anchor = "# "+anchor
-        ret.anchor = anchor
-        ret.path = path
-    else:
-        ret.path = target
-    if ret.path and (not '.' in ret.path):
-        ret.path = ret.path + ".md"
-    assert os.path.exists(ret.path), f"{ret.path} not exists"
+    if target.startswith('#^'): # 这是heading inside的情况
+        ret.internal = True
+        ret.anchor = target[1:]
+    elif target.startswith('#'): # 这是heading inside的情况
+        ret.internal = True
+        ret.anchor = JumpToAnchor("# " + target[1:])
+    else: # 这种情况一定包含文件
+        # {{{2 其它文件的3种链接形式
+        ret.internal = False # 这句话是多余的, False是默认值
+        if('#' in target):
+            ret.path, ret.anchor = target.rsplit('#', 1) # 现在line还是字符串
+            if not ret.anchor.startswith("^"):
+                ret.anchor = "# "+ret.anchor
+        elif(line_regex.match(target)):
+            ret.path, ret.line = target.rsplit(':', 1) # 现在line还是字符串
+        else:
+            ret.path = target
+        # {{{2 规则化路径
+
+        ret.path = normalize_path(ret.path)
+        if(os.path.samefile(ret.path, current_file)):
+            ret.internal = True
+        assert os.path.exists(ret.path), f"{ret.path} not exists"
+        ret.os_open = has_os_extension(target)
+    if(ret.line):
+        ret.line = int(ret.line)
+
     return ret
+# }}}
 
 
 class ParsedPath(object):
@@ -230,6 +238,8 @@ class ParsedPath(object):
         self.path = path
         self.line = line
         self.anchor = anchor
+        self.os_open = False
+        self.internal = False
 
     def __repr__(self):
         return 'ParsedPath({!r}, line={}, anchor={!r})'.format(self.path, self.line, self.anchor)
