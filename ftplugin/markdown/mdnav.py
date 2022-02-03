@@ -31,20 +31,13 @@ _logger = FakeLogger()
 def plugin_entry_point():
     import vim
 
-    if int(vim.eval("exists('g:mdnav#Extensions')")):
-        extensions = vim.eval('g:mdnav#Extensions')
-
-    else:
-        extensions = []
-
     if int(vim.eval("exists('g:mdnav#DebugMode')")):
         _logger.active = vim.eval('g:mdnav#DebugMode') == 'true'
 
     row, col = vim.current.window.cursor
     cursor = (row - 1, col) # -1的原因是, 行号是从1开始, 但是取当前行, 从0开始
-    lines = vim.current.buffer
 
-    target = parse_link(cursor, lines) # 返回了[]()中()中的内容
+    target = parse_link(cursor, vim.current.line) # 返回了[]()中()中的内容
     _logger.info('open %s', target)
     action = open_link(
         target,
@@ -153,10 +146,9 @@ def call(args):
 
 
 
-def parse_link(cursor, lines):
+def parse_link(cursor, line):
     '''返回[[]]中的内容'''
     row, column = cursor # row从1开始, column从0开始
-    line = lines[row] # 这才获得了当前行
     start_pos = -1
     end_pos = -1
     if(line[column]=='['):
