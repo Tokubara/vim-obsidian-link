@@ -7,12 +7,6 @@ import sys
 sys.path.append("/Users/quebec/box/obsidian/vim/mdnav/ftplugin/markdown/")
 from parse_path import ParsePath, ParsedPath
 
-# {{{1 全局变量
-import vim
-current_file = vim.eval("expand('%:p')")
-# }}}
-
-
 
 class FakeLogger(object):
     def __init__(self, active=False):
