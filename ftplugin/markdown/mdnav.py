@@ -127,16 +127,18 @@ class JumpToAnchor(Action):
 def call(args):
     """If available use vims shell mechanism to work around display issues
     """
-    try:
-        import vim
+    # try:
+    #     import vim
 
-    except ImportError:
-        import subprocess
-        subprocess.call(args)
+    # except ImportError:
+    #     import subprocess
+    #     subprocess.call(args)
 
-    else:
-        args = ['shellescape(' + json.dumps(arg) + ')' for arg in args]
-        vim.command('execute "! " . ' + ' . " " . '.join(args))
+    # else:
+    #     args = ['shellescape(' + json.dumps(arg) + ')' for arg in args]
+    #     vim.command('execute "! " . ' + ' . " " . '.join(args))
+    import subprocess
+    subprocess.call(args)
 
 
 
@@ -145,6 +147,7 @@ def parse_link(cursor, line):
     row, column = cursor # row从1开始, column从0开始
     start_pos = -1
     end_pos = -1
+    print(f"line:{line}, culomn:{column}")
     if(line[column]=='['):
         if(column+1 >= 0 and line[column+1]=='['):
             start_pos = column+2

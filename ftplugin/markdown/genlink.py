@@ -28,7 +28,8 @@ def gen_heading_link(cur_line):
 def gen_id_link(cur_line):
     import vim
     rstr = gen_random_string(6)
-    vim.current.buffer[vim.current.window.cursor[0]-1] = vim.current.buffer[vim.current.window.cursor[0]-1] + " ^" + rstr
+    cur_line_index = vim.current.window.cursor[0]-1
+    vim.current.buffer[cur_line_index] = vim.current.buffer[cur_line_index] + " ^" + rstr
     return "#^" + rstr
 
 
