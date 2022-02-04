@@ -6,6 +6,7 @@ import re
 import sys
 sys.path.append("/Users/quebec/box/obsidian/vim/mdnav/ftplugin/markdown/")
 from parse_path import ParsePath, ParsedPath
+from parse_link import parse_link
 
 
 class FakeLogger(object):
@@ -31,7 +32,7 @@ def plugin_entry_point():
     row, col = vim.current.window.cursor
     cursor = (row - 1, col) # -1的原因是, 行号是从1开始, 但是取当前行, 从0开始
 
-    target = parse_link(cursor, vim.current.line) # 返回了[]()中()中的内容
+    target = parse_link(col, vim.current.line) # 返回了[]()中()中的内容
     _logger.info('open %s', target)
     action = open_link(
         target,
@@ -139,43 +140,6 @@ def call(args):
     #     vim.command('execute "! " . ' + ' . " " . '.join(args))
     import subprocess
     subprocess.call(args)
-
-
-
-def parse_link(cursor, line):
-    '''返回[[]]中的内容'''
-    row, column = cursor # row从1开始, column从0开始
-    start_pos = -1
-    end_pos = -1
-    print(f"line:{line}, culomn:{column}")
-    if(line[column]=='['):
-        if(column+1 >= 0 and line[column+1]=='['):
-            start_pos = column+2
-        elif(column-1 >=0 and line[column-1]=='['):
-            start_pos = column+1
-        end_pos = line.find(']]', start_pos)
-        if start_pos >= 0 and end_pos >= 0:
-            return line[start_pos:end_pos]
-    elif(line[column]==']'):
-        if(column-1 >=0 and line[column-1]==']'):
-            end_pos = column - 1
-        elif(column+1 >=0 and line[column+1]==']'):
-            end_pos = column
-        start_pos = line.rfind('[[', 0, end_pos)
-        if start_pos >= 0 and end_pos >= 0:
-            return line[(start_pos+2):end_pos]
-    else:
-        start_pos = line.rfind('[[')
-        end_pos = line.find(']]')
-        if start_pos >= 0 and end_pos >= 0:
-            return line[(start_pos+2):end_pos]
-    return None
-        
-
-    # _logger.info('handle line %s (%s, %s)', line, row, column)
-    # m = reference_definition_pattern.match(line) # 这好像没什么关系
-    # if m is not None:
-    #     return m.group('link').strip()
 
 
 if __name__ == "__main__":
