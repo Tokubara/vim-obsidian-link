@@ -4,7 +4,7 @@ import json
 import os.path
 import re
 import sys
-sys.path.append("/Users/quebec/box/obsidian/vim/mdnav/ftplugin/markdown/")
+# sys.path.append("/Users/quebec/box/obsidian/vim/mdnav/ftplugin/markdown/")
 from parse_path import ParsePath, ParsedPath
 from parse_link import parse_link
 
