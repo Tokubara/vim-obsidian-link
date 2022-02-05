@@ -32,7 +32,7 @@ def parse_link(column, line):
         return sub_bytes.decode('utf8')
     else:
         print("cannot find link")
-        exit(1)
+        return None
 if(__name__=="__main__"):
     line = "大概说起来, args表示要执行的命令, 既可以是字符串, 也可以是字符串列表. 如果是字符串列表, 并且复杂(比如有重定向), 那么shell参数必须表示True, 这与[[perl#system]]逻辑相似."
     print(parse_link(203, line))

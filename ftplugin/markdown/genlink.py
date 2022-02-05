@@ -22,8 +22,7 @@ def gen_heading_link(cur_line):
     if(match_obj):
         return "#" + match_obj.group(1)
     else:
-        print("not a heading")
-        exit(1)
+        raise Exception("not a heading")
 
 def gen_id_link(cur_line):
     import vim

@@ -32,14 +32,16 @@ def plugin_entry_point():
     row, col = vim.current.window.cursor
     cursor = (row - 1, col) # -1的原因是, 行号是从1开始, 但是取当前行, 从0开始
 
-    target = parse_link(col, vim.current.line) # 返回了[]()中()中的内容
-    _logger.info('open %s', target)
-    action = open_link(
-        target,
-        current_file=vim.eval("expand('%:p')"),
-    ) # 返回是类的实例, 比如JumpToAnchor
-    if(action):
+    try:
+        target = parse_link(col, vim.current.line) # 返回了[]()中()中的内容
+        action = open_link(
+            target,
+            current_file=vim.eval("expand('%:p')"),
+        ) # 返回是类的实例, 比如JumpToAnchor
         action() # 跳转动作
+    except Exception:
+        print("error")
+
 
 
 # {{{ 入口, target是target
