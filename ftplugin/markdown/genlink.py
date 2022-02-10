@@ -47,5 +47,6 @@ if __name__ == "__main__":
     cur_filename = vim.eval("expand('%:p')")
     path = get_path(cur_filename)
     full_link = f"[[{path +link}]]"
+    full_link = full_link.replace("'", "''")
     vim.command(f"let @* = '{full_link}'")
 
