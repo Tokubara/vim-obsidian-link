@@ -34,13 +34,16 @@ def plugin_entry_point():
 
     try:
         target = parse_link(col, vim.current.line) # 返回了[]()中()中的内容
+        if(not target):
+            raise TypeError("not find link")
         action = open_link(
             target,
             current_file=vim.eval("expand('%:p')"),
         ) # 返回是类的实例, 比如JumpToAnchor
         action() # 跳转动作
     except Exception:
-        print("error")
+        import traceback
+        print(traceback.format_exc())
 
 
 
@@ -49,17 +52,19 @@ def open_link(target, current_file):
     """
     :returns: a callable that encapsulates the action to perform
     """
+    assert target,"target is None"
+   # if target is not None:
+    #     target = target.strip()
 
-    if target is not None:
-        target = target.strip()
+    # if not target:
+    #     _logger.info('no target')
+    #     # return NoOp(target)
 
-    if not target:
-        _logger.info('no target')
-        # return NoOp(target)
-
-        return None
+    #     return None
     parsed_path = ParsePath(current_file).parse_path(target)
-    if(parsed_path.os_open):
+    if(parsed_path.ext == 'pdf' and parsed_path.line):
+        return PDFOpen(parsed_path)
+    elif(parsed_path.os_open):
         return OSOpen(parsed_path.path)
     elif(parsed_path.internal):
         return JumpToAnchor(parsed_path)
@@ -91,6 +96,10 @@ class OSOpen(Action):
         else:
             os.startfile(self.target)
 
+class PDFOpen(Action):
+    def __call__(self):
+        # print(f"{self.target.path}: {self.target.line}")
+        call(['/Users/quebec/bin/goto_page', self.target.path, str(self.target.line)])
 
 # {{{1 VimOpen: input: [[]]的内容, 跨文件, vim处理的情况
 class VimOpen(Action):

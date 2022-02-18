@@ -7,14 +7,10 @@ class ParsePath:
         self.current_file =  current_file
 
     @classmethod
-    def has_os_extension(cls, path):
+    def has_os_extension(cls, ext):
         '''如果extensions不为空, 且后缀在extensions中, 返回True'''
         if not cls.open_in_os_extensions:
             return False
-
-        _, ext = os.path.splitext(path)
-        if ext:
-            ext = ext[1:]
         return ext in cls.open_in_os_extensions
     def anchor_path(self, target):
         if os.path.isabs(target):
@@ -74,7 +70,9 @@ class ParsePath:
             if(os.path.samefile(ret.path, self.current_file)):
                 ret.internal = True
             assert os.path.exists(ret.path), f"{ret.path} not exists"
-            ret.os_open = self.has_os_extension(target)
+            _, ret.ext = os.path.splitext(ret.path)
+            ret.ext = ret.ext[1:]
+            ret.os_open = self.has_os_extension(ret.ext)
         if(ret.line):
             ret.line = int(ret.line)
 
@@ -95,9 +93,9 @@ class ParsedPath(object):
         return 'ParsedPath({!r}, line={}, anchor={!r}, os_open={}, internal={})'.format(self.path, self.line, self.anchor, self.os_open, self.internal)
 if __name__ == '__main__':
     parse_path = ParsePath("/Users/quebec/notes/tmp.md").parse_path
-    print(parse_path('python#如果没实现`__init__`方法, 类有参数'))
+    # print(parse_path('python#如果没实现`__init__`方法, 类有参数'))
     # print(parse_path('#^t3thyl'))
-    # print(parse_path('/Users/quebec/box/obsidian/vim/mdnav/ftplugin/markdown/mdnav.py'))
+    print(parse_path('/Users/quebec/Documents/Book/Apple Automator with AppleScript Bible by Thomas Myer (z-lib.org).pdf:449'))
     # print(parse_path('Table 5.3.png'))
-    print(parse_path('perl#scalar context'))
+    # print(parse_path('perl#scalar context'))
 
