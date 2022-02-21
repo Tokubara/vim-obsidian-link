@@ -62,7 +62,7 @@ def open_link(target, current_file):
 
     #     return None
     parsed_path = ParsePath(current_file).parse_path(target)
-    if(parsed_path.ext == 'pdf' and parsed_path.line):
+    if(hasattr(parsed_path, "exit") and parsed_path.ext == 'pdf' and parsed_path.line):
         return PDFOpen(parsed_path)
     elif(parsed_path.os_open):
         return OSOpen(parsed_path.path)
