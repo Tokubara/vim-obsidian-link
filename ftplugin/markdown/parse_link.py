@@ -24,8 +24,9 @@ def parse_link(column, line):
         if start_pos >= 0 and end_pos >= 0:
             sub_bytes = line_bytes[(start_pos+2):end_pos]
     else:
-        start_pos = line_bytes.rfind(b'[[')
-        end_pos = line_bytes.find(b']]')
+        # import pdb; pdb.set_trace()
+        start_pos = line_bytes.rfind(b'[[', 0, column) #  ^9Fy79w
+        end_pos = line_bytes.find(b']]', column)
         if start_pos >= 0 and end_pos >= 0:
             sub_bytes = line_bytes[(start_pos+2):end_pos]
     if(sub_bytes):
@@ -34,5 +35,5 @@ def parse_link(column, line):
         print("cannot find link")
         return None
 if(__name__=="__main__"):
-    line = "大概说起来, args表示要执行的命令, 既可以是字符串, 也可以是字符串列表. 如果是字符串列表, 并且复杂(比如有重定向), 那么shell参数必须表示True, 这与[[perl#system]]逻辑相似."
-    print(parse_link(203, line))
+    line = "##### pynav, `[[#annotation: yolo格式]]`都解析不了?, `[[/Users/quebec/box/毕设/Soccer-Ball-Detection-YOLOv2/]]`识别有错误"
+    print(parse_link(18, line))
