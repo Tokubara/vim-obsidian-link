@@ -51,7 +51,7 @@ class ParsePath:
             ret.anchor = target[1:]
         elif target.startswith('#'): # 这是heading inside的情况
             ret.internal = True
-            ret.anchor = "## " + target[1:]
+            ret.anchor = target[1:]
         else: # 这种情况一定包含文件
             # {{{2 其它文件的3种链接形式
             ret.internal = False # 这句话是多余的, False是默认值
@@ -59,7 +59,7 @@ class ParsePath:
             if('#' in target):
                 ret.path, ret.anchor = target.rsplit('#', 1) # 现在line还是字符串
                 if not ret.anchor.startswith("^"):
-                    ret.anchor = "## "+ret.anchor
+                    ret.anchor = ret.anchor
             elif(line_regex.match(target)):
                 ret.path, ret.line = target.rsplit(':', 1) # 现在line还是字符串
             else:
@@ -92,10 +92,10 @@ class ParsedPath(object):
     def __repr__(self):
         return 'ParsedPath({!r}, line={}, anchor={!r}, os_open={}, internal={})'.format(self.path, self.line, self.anchor, self.os_open, self.internal)
 if __name__ == '__main__':
-    parse_path = ParsePath("/Users/quebec/notes/tmp.md").parse_path
+    parse_path = ParsePath("/Users/quebec/notes/yolo.md").parse_path
     # print(parse_path('python#如果没实现`__init__`方法, 类有参数'))
     # print(parse_path('#^t3thyl'))
-    print(parse_path('/Users/quebec/Documents/Book/Apple Automator with AppleScript Bible by Thomas Myer (z-lib.org).pdf:449'))
+    print(parse_path('/Users/quebec/box/毕设/Soccer-Ball-Detection-YOLOv2/cfg/yolo_custom.cfg#classes=2'))
     # print(parse_path('Table 5.3.png'))
     # print(parse_path('perl#scalar context'))
 

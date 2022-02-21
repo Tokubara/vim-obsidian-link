@@ -135,6 +135,7 @@ class JumpToAnchor(Action):
         for (idx, line) in enumerate(buffer):
             if(line.endswith(target)):
                 return idx
+        print('not find anchor')
 
 def call(args):
     """If available use vims shell mechanism to work around display issues
