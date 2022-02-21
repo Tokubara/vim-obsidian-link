@@ -25,7 +25,7 @@ class ParsePath:
         return ret
     # {{{ normalize_path: 将target中出现的path转换为真正存在的path
     def normalize_path(self, path):
-        if path and (not '.' in path):
+        if path and (not '.' in path) and not path.endswith('/'):
             path = path + ".md"
         path = self.anchor_path(path)
         return path
