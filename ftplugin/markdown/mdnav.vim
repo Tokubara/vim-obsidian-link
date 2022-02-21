@@ -15,5 +15,6 @@ command! GenLinkLine call s:GenLink("line")
 command! GenLinkID call s:GenLink("id") 
 command! GenLinkEmpty call s:GenLink("") 
 command! GenLinkHeading call s:GenLink("heading") 
+command! GenLinkSuffix call s:GenLink("suffix") 
 nnoremap <buffer> <CR> :MDNavExec<CR>
 

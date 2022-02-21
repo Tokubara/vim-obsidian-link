@@ -95,7 +95,8 @@ if __name__ == '__main__':
     parse_path = ParsePath("/Users/quebec/notes/yolo.md").parse_path
     # print(parse_path('python#如果没实现`__init__`方法, 类有参数'))
     # print(parse_path('#^t3thyl'))
-    print(parse_path('/Users/quebec/box/毕设/Soccer-Ball-Detection-YOLOv2/cfg/yolo_custom.cfg#classes=2'))
+    # print(parse_path('/Users/quebec/box/毕设/Soccer-Ball-Detection-YOLOv2/cfg/yolo_custom.cfg#classes=2'))
+    print(parse_path('/Users/quebec/box/obsidian/vim/mdnav/ftplugin/markdown/mdnav.py#def find_anchor(cls, target, buffer):'))
     # print(parse_path('Table 5.3.png'))
     # print(parse_path('perl#scalar context'))
 
