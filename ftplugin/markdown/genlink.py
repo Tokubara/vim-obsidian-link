@@ -50,7 +50,7 @@ if __name__ == "__main__":
     elif(sys.argv[0] == "line"):
         link = f":{vim.current.window.cursor[0]}"
     elif(sys.argv[0] == "suffix"):
-        link = vim.current.line
+        link = "#" + vim.current.line
     else:
         link = ""
     cur_filename = vim.eval("expand('%:p')")
