@@ -56,8 +56,13 @@ if __name__ == "__main__":
         link = "#" + vim.current.line.strip()
     elif(sys.argv[0] == "empty"):
         link = ""
-    cur_filename = vim.eval("expand('%:p')")
-    path = get_path(cur_filename)
+    try:
+        if int(vim.eval('t:genlink_local')) == 0:
+            raise TypeError
+        path = ""
+    except:
+        cur_filename = vim.eval("expand('%:p')")
+        path = get_path(cur_filename)
     full_link = f"[[{path +link}]]"
     full_link = full_link.replace("'", "''")
     vim.command(f"let @* = '{full_link}'")
