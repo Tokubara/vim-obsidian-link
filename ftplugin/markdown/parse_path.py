@@ -63,7 +63,7 @@ class ParsePath:
         else:
             if '#' in target: # 这种情况一定包含文件
                 # import pdb; pdb.set_trace()
-                ret.path, anchor = target.rsplit('#', 1)
+                ret.path, anchor = target.split('#', 1)
                 set_anchor(ret, anchor)
                 ret.path = self.normalize_path(ret.path)
             else:

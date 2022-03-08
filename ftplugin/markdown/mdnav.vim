@@ -18,6 +18,15 @@ function! s:GenLinkToggleLocal()
   endif
 endfunction
 
+function! s:GenLinkReload()
+py3 << EOF
+import parse_path
+from parse_path import ParsePath, ParsedPath, ParseType
+import importlib
+importlib.reload(parse_path)
+EOF
+endfunction
+
 command! MDNavExec execute 'py3file ' . g:mdnav#PythonScript
 command! GenLinkLine call s:GenLink("line") 
 command! GenLinkID call s:GenLink("id") 
@@ -25,5 +34,6 @@ command! GenLinkEmpty call s:GenLink("empty")
 command! GenLinkHeading call s:GenLink("heading") 
 command! GenLinkSuffix call s:GenLink("suffix") 
 command! GenLinkToggleLocal call s:GenLinkToggleLocal()
+command! GenLinkReload call s:GenLinkReload()
 nnoremap <buffer> <CR> :MDNavExec<CR>
 

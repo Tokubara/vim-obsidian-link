@@ -53,7 +53,7 @@ if __name__ == "__main__":
     elif(sys.argv[0] == "line"):
         link = f"#:{vim.current.window.cursor[0]}"
     elif(sys.argv[0] == "suffix"):
-        link = "#" + vim.current.line.strip()
+        link = "#%" + vim.current.line.strip()
     elif(sys.argv[0] == "empty"):
         link = ""
     try:

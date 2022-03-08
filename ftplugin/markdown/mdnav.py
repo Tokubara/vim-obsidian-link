@@ -93,7 +93,7 @@ class VimOpen(Action):
         import vim
     # TODO 这里可以用tabnew, split, 可以用选项
         if(self.target.path):
-            vim.command('e {}'.format(self.target.path.replace(' ', '\\ '))) # highlight 这一步就在vim中打开了文件
+            vim.command('split {}'.format(self.target.path.replace(' ', '\\ '))) # highlight 这一步就在vim中打开了文件
         if(self.target.type == ParseType.line):
             JumpToLine(self.target)()
         elif(self.target.type == ParseType.heading):
