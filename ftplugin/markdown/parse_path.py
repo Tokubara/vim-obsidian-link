@@ -68,7 +68,7 @@ class ParsePath:
                 ret.path = self.normalize_path(ret.path)
             else:
                 ret.path = self.normalize_path(target)
-                if('.' in ret.path and ret.path.rsplit('.', 1)[1] in self.open_in_os_extensions):
+                if('.' in ret.path and ret.path.rsplit('.', 1)[1].lower() in self.open_in_os_extensions):
                     ret.type = ParseType.os
                 else:
                     ret.type = ParseType.empty
