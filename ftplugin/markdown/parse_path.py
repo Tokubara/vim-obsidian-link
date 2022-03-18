@@ -15,7 +15,7 @@ class ParseType(Enum):
 class ParsePath:
     vault_prefix = "/Users/quebec/notes/vx_attachments/"
     notes_prefix = "/Users/quebec/notes"
-    open_in_os_extensions = {'png', 'jpg', 'jpeg', 'mp3', 'mp4'} # pdf单独处理了
+    open_in_os_extensions = {'png', 'jpg', 'jpeg', 'mp3', 'mp4', 'pdf'} # pdf单独处理了
 
     def __init__(self, current_file_path):
         self.current_file = current_file_path
