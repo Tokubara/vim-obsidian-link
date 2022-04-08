@@ -11,10 +11,10 @@ function! s:GenLink(argv)
 endfunction
 
 function! s:GenLinkToggleLocal()
-  if exists("t:genlink_local")
-    let t:genlink_local = 1 - t:genlink_local
+  if exists("b:genlink_local")
+    let b:genlink_local = 1 - b:genlink_local
   else
-    let t:genlink_local = 1
+    let b:genlink_local = 1
   endif
 endfunction
 

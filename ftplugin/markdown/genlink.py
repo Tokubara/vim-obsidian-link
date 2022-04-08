@@ -57,7 +57,7 @@ if __name__ == "__main__":
     elif(sys.argv[0] == "empty"):
         link = ""
     try:
-        if int(vim.eval('t:genlink_local')) == 0:
+        if int(vim.eval('b:genlink_local')) == 0:
             raise TypeError
         path = ""
     except:
