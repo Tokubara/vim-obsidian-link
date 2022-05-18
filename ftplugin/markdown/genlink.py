@@ -24,7 +24,7 @@ def gen_heading_link(cur_line):
     if(match_obj):
         heading = match_obj.group(1)
         heading_content = heading_content_pattern.sub("", heading)
-        return "#" + heading_content
+        return "*" + heading_content
     else:
         raise Exception("not a heading")
 
@@ -38,8 +38,8 @@ def gen_id_link(cur_line):
         import vim
         rstr = gen_random_string(6)
         cur_line_index = vim.current.window.cursor[0]-1
-        vim.current.buffer[cur_line_index] = vim.current.buffer[cur_line_index] + "^" + rstr
-    return "#^" + rstr
+        vim.current.buffer[cur_line_index] = vim.current.buffer[cur_line_index] + "<<" + rstr + ">>"
+    return rstr
 
 
 if __name__ == "__main__":
@@ -51,9 +51,10 @@ if __name__ == "__main__":
     elif(sys.argv[0] == "id"):
         link = gen_id_link(cur_line)
     elif(sys.argv[0] == "line"):
-        link = f"#:{vim.current.window.cursor[0]}"
+        link = f"{vim.current.window.cursor[0]}"
     elif(sys.argv[0] == "suffix"):
-        link = "#%" + vim.current.line.strip()
+        # link =vim.current.line.strip()
+        link =vim.current.line
     elif(sys.argv[0] == "empty"):
         link = ""
     try:
@@ -62,8 +63,10 @@ if __name__ == "__main__":
         path = ""
     except:
         cur_filename = vim.eval("expand('%:p')")
-        path = get_path(cur_filename)
-    full_link = f"[[{path +link}]]"
+        path = cur_filename
+    if link != "":
+        link = "::" + link
+    full_link = f"[[{path +link}][这个]]" # <<p4L8WE>>
     full_link = full_link.replace("'", "''")
     vim.command(f"let @* = '{full_link}'")
 
